@@ -3,8 +3,8 @@ const express = require("express")
 const cors = require("cors")
 const fs = require("fs")
 
-// Bot tokenini o'zgartiring
-const bot = new Telegraf("7656007053:AAGSDJ6LZPj5DEiZEnghrWDwg1_5HQWTGJ8")
+// Bot tokenini environment variable dan olish
+const bot = new Telegraf(process.env.BOT_TOKEN)
 const app = express()
 const PORT = process.env.PORT || 3000
 
@@ -201,15 +201,27 @@ app.get("/api/plans", (req, res) => {
   res.json(plans)
 })
 
+// Webhook endpoint (Render uchun)
+app.post("/webhook", (req, res) => {
+  bot.handleUpdate(req.body)
+  res.sendStatus(200)
+})
+
 // Botni ishga tushirish
-bot
-  .launch()
-  .then(() => {
-    console.log("Bot ishga tushdi!")
-  })
-  .catch((err) => {
-    console.error("Bot ishga tushishda xatolik:", err)
-  })
+if (process.env.NODE_ENV === "production") {
+  // Production'da webhook rejimida
+  console.log("Bot webhook rejimida ishga tushdi")
+} else {
+  // Development'da polling rejimida
+  bot
+    .launch()
+    .then(() => {
+      console.log("Bot polling rejimida ishga tushdi!")
+    })
+    .catch((err) => {
+      console.error("Bot ishga tushishda xatolik:", err)
+    })
+}
 
 // API serverini ishga tushirish
 app.listen(PORT, () => {
